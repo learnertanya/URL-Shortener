@@ -1,0 +1,3 @@
+Post/url-generate a new short url and returns the shortened url
+GET/:ID- redirects the user to the original url
+GET/url/analytics/:id-returns the clicks for the provided short id
