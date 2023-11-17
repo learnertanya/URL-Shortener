@@ -1,9 +1,14 @@
 import express from "express";
-import path from 'path';
+import path from "path";
+import URL from "./models/url.mjs";
+import cookieParser from "cookie-parser";
+import { restrictToLoggedinUserOnly ,checkAuth} from "./middlewares/auth.mjs";
+
+
 import { connectToMongoDB } from "./connect.mjs";
 import { router as urlRoute } from "./routes/url.mjs";
-import {router as staticRouter} from "./routes/staticRouter.mjs"
-import URL from "./models/url.mjs";
+import { router as staticRouter } from "./routes/staticRouter.mjs";
+import { router as userRoute } from "./routes/user.mjs";
 
 const app = express();
 const PORT = 8001;
@@ -11,16 +16,21 @@ const PORT = 8001;
 connectToMongoDB("mongodb://127.0.0.1:27017/short-url").then(() => {
   console.log("Mongodb connected");
 });
-app.set('view engine', 'ejs');
-app.set('views',path.resolve("./views"));
+app.set("view engine", "ejs");
+app.set("views", path.resolve("./views"));
+
+
 app.use(express.json());
-app.use(express.urlencoded({extended:false}))
-app.use("/url", urlRoute);
-app.use("/",staticRouter);
+app.use(express.urlencoded({ extended: false }));
+app.use(cookieParser());
+
+app.use("/url",restrictToLoggedinUserOnly, urlRoute);
+app.use("/",checkAuth, staticRouter);
+app.use("/user", userRoute);
 
 app.get("/:shortId", async (req, res) => {
   const shortId = req.params.shortId;
-  
+
   try {
     const entry = await URL.findOneAndUpdate(
       {
